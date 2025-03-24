@@ -38,10 +38,8 @@ def draw_figures(colour):
             if board[row][col]==1:
                 pygame.draw.circle(screen,colour, (col*SQUARE_SIZE+ SQUARE_SIZE//2,row*SQUARE_SIZE + SQUARE_SIZE//2) ,CIRCLE_RADIUS,CIRCLE_WIDTH)
             elif board[row][col]==2:
-                pygame.draw.line(screen,colour,
-                                (col*SQUARE_SIZE + SQUARE_SIZE//4,row*SQUARE_SIZE +SQUARE_SIZE//4),( (col+1)*SQUARE_SIZE-SQUARE_SIZE//4,(row+1)*SQUARE_SIZE- SQUARE_SIZE//4 ),
-                                ((col+1)*SQUARE_SIZE - SQUARE_SIZE//4,row*SQUARE_SIZE +SQUARE_SIZE//4),( col*SQUARE_SIZE+SQUARE_SIZE//4,(row+1)*SQUARE_SIZE- SQUARE_SIZE//4 )                                             
-                                )
+                pygame.draw.line(screen,colour, (col*SQUARE_SIZE + SQUARE_SIZE//4,row*SQUARE_SIZE +SQUARE_SIZE//4),( (col+1)*SQUARE_SIZE-SQUARE_SIZE//4,(row+1)*SQUARE_SIZE- SQUARE_SIZE//4 ))
+                pygame.draw.line(screen,colour,((col+1)*SQUARE_SIZE - SQUARE_SIZE//4,row*SQUARE_SIZE +SQUARE_SIZE//4),( col*SQUARE_SIZE+SQUARE_SIZE//4,(row+1)*SQUARE_SIZE- SQUARE_SIZE//4 ))
 
 
 def is_board_full():
@@ -51,65 +49,70 @@ def is_board_full():
                 return False
     return True
 
-def check_win(player,check_board):
+def check_win(player):
     for col in range (BOARD_COLS):
-        if check_board[0][col]==player and check_board[1][col]==player and check_board[2][col]==player:
+        if board[0][col]==player and board[1][col]==player and board[2][col]==player:
             return True
     for row in range (BOARD_ROWS):  
-        if check_board[row][0]==player and check_board[row][1]==player and check_board[row][2]==player:
+        if board[row][0]==player and board[row][1]==player and board[row][2]==player:
             return True
-    if check_board[0][0]==player and check_board[1][1]==player and check_board[2][2]==player:
+    if board[0][0]==player and board[1][1]==player and board[2][2]==player:
         return True
-    if check_board[0][2]==player and check_board[1][1]==player and check_board[2][0]==player:
+    if board[0][2]==player and board[1][1]==player and board[2][0]==player:
         return True
     
     return False
 
 
-def minimax(minimax_board,is_maximizing):
-    if check_win(2,minimax_board):
-        return float('inf')
+def minimax(is_maximizing, depth):
+    if check_win(2):
+        return float('inf'), depth
     
-    elif check_win(1,minimax_board):
-        return float('-inf')
+    elif check_win(1):
+        return float('-inf'),depth
     elif is_board_full():
-        return 0
+        return 0,depth
     
     if is_maximizing:
         best_score= float('-inf')
-
+        best_depth= float('inf')
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
-                if minimax_board[row][col]==0:
-                    minimax_board[row][col]=2
-                    score=minimax(minimax_board,False)
-                    minimax_board[row][col]=0
+                if board[row][col]==0:
+                    board[row][col]=2
+                    score,scoredep=minimax(False,depth+1)
+                    board[row][col]=0
                     best_score=max(score,best_score)
-        return best_score
+                    best_depth=min(depth,scoredep)
+        return best_score , best_depth
 
     else:
         best_score=float('inf')
+        best_depth=float('-inf')
 
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
-                if minimax_board[row][col]==0:
-                    minimax_board[row][col]=1
-                    score=minimax(minimax_board,True)
-                    minimax_board[row][col]=0
+                if board[row][col]==0:
+                    board[row][col]=1
+                    score,scoredep=minimax(True,depth+1)
+                    board[row][col]=0
                     best_score=min(score,best_score)
-        return best_score
+                    best_depth=max(depth,scoredep)
+        return best_score, best_depth
     
 
 def best_move():
     best_score=float('-inf')
     move=(-1,-1)
-
+    depthf=float('inf')
+    depth=0
     for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
                 if board[row][col]==0:
                     board[row][col]=2
-                    score=minimax(board,False)
-                    if score>best_score:
+                    score,depth=minimax(False,0)
+                    if score>best_score or (score==best_score and depth<depthf):
+                        depthf=depth
                         best_score=score
                         move=(row,col)
                     board[row][col]=0
@@ -144,10 +147,10 @@ while(True):
             mouseX=event.pos[0] // SQUARE_SIZE
             mouseY=event.pos[1] // SQUARE_SIZE
 
-            if(board[mouseX][mouseY]==0):
-                board[mouseX][mouseY]=1
+            if(board[mouseY][mouseX]==0):
+                board[mouseY][mouseX]=1
 
-                if check_win(1,board):
+                if check_win(1):
                     game_over=True
                 # else:
                 #     player=player%2 +1
@@ -155,7 +158,7 @@ while(True):
                 if not game_over:
 
                    if best_move():
-                       if check_win(2,board) :
+                       if check_win(2) :
                            game_over=True
                 
                 if(is_board_full()):
@@ -170,10 +173,10 @@ while(True):
         draw_figures(WHITE)
     
     if game_over:
-        if check_win(1,board):
+        if check_win(1):
             draw_lines(GREEN)
             draw_figures(GREEN)
-        elif check_win(2,board):
+        elif check_win(2):
             draw_lines(RED)
             draw_figures(RED)
         else:
