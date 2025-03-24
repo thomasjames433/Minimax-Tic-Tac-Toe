@@ -38,16 +38,12 @@ def draw_figures(colour):
             if board[row][col]==1:
                 pygame.draw.circle(screen,colour, (col*SQUARE_SIZE+ SQUARE_SIZE//2,row*SQUARE_SIZE + SQUARE_SIZE//2) ,CIRCLE_RADIUS,CIRCLE_WIDTH)
             elif board[row][col]==2:
-                pygame.draw.line(screen,colour, (col*SQUARE_SIZE + SQUARE_SIZE//4,row*SQUARE_SIZE +SQUARE_SIZE//4),( (col+1)*SQUARE_SIZE-SQUARE_SIZE//4,(row+1)*SQUARE_SIZE- SQUARE_SIZE//4 ))
-                pygame.draw.line(screen,colour,((col+1)*SQUARE_SIZE - SQUARE_SIZE//4,row*SQUARE_SIZE +SQUARE_SIZE//4),( col*SQUARE_SIZE+SQUARE_SIZE//4,(row+1)*SQUARE_SIZE- SQUARE_SIZE//4 ))
+                pygame.draw.line(screen,colour, (col*SQUARE_SIZE + SQUARE_SIZE//4,row*SQUARE_SIZE +SQUARE_SIZE//4),( (col+1)*SQUARE_SIZE-SQUARE_SIZE//4,(row+1)*SQUARE_SIZE- SQUARE_SIZE//4 ),CROSS_WIDTH)
+                pygame.draw.line(screen,colour,((col+1)*SQUARE_SIZE - SQUARE_SIZE//4,row*SQUARE_SIZE +SQUARE_SIZE//4),( col*SQUARE_SIZE+SQUARE_SIZE//4,(row+1)*SQUARE_SIZE- SQUARE_SIZE//4 ),CROSS_WIDTH)
 
 
 def is_board_full():
-    for row in range(BOARD_ROWS):
-        for col in range(BOARD_COLS):
-            if board[row][col]==0:
-                return False
-    return True
+    return np.all(board!=0)
 
 def check_win(player):
     for col in range (BOARD_COLS):
@@ -83,12 +79,12 @@ def minimax(is_maximizing, depth):
                     score,scoredep=minimax(False,depth+1)
                     board[row][col]=0
                     best_score=max(score,best_score)
-                    best_depth=min(depth,scoredep)
+                    best_depth=min(best_depth,scoredep)
         return best_score , best_depth
 
     else:
         best_score=float('inf')
-        best_depth=float('-inf')
+        best_depth=float('inf')
 
         for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
@@ -97,22 +93,21 @@ def minimax(is_maximizing, depth):
                     score,scoredep=minimax(True,depth+1)
                     board[row][col]=0
                     best_score=min(score,best_score)
-                    best_depth=max(depth,scoredep)
+                    best_depth=min(best_depth,scoredep)
         return best_score, best_depth
     
 
 def best_move():
     best_score=float('-inf')
     move=(-1,-1)
-    depthf=float('inf')
-    depth=0
+    best_depth=float('inf')
     for row in range(BOARD_ROWS):
             for col in range(BOARD_COLS):
                 if board[row][col]==0:
                     board[row][col]=2
                     score,depth=minimax(False,0)
-                    if score>best_score or (score==best_score and depth<depthf):
-                        depthf=depth
+                    if score>best_score or (score==best_score and depth<best_depth):
+                        best_depth=depth
                         best_score=score
                         move=(row,col)
                     board[row][col]=0
@@ -125,9 +120,7 @@ def best_move():
 def restart():
     screen.fill(BLACK)
     draw_lines(WHITE)
-    for row in range(BOARD_ROWS):
-        for col in range(BOARD_COLS):
-            board[row][col]=0
+    board.fill(0)
 
 
 draw_lines(WHITE)
@@ -143,7 +136,7 @@ while(True):
         if event.type== pygame.QUIT:
             sys.exit()
 
-        if event.type== pygame.MOUSEBUTTONDOWN and not game_over:
+        elif event.type== pygame.MOUSEBUTTONDOWN and not game_over:
             mouseX=event.pos[0] // SQUARE_SIZE
             mouseY=event.pos[1] // SQUARE_SIZE
 
@@ -164,7 +157,7 @@ while(True):
                 if(is_board_full()):
                     game_over=True  
         
-        if event.type==pygame.KEYDOWN:
+        elif event.type==pygame.KEYDOWN:
             if event.key==pygame.K_r:
                 restart()
                 game_over=False    
